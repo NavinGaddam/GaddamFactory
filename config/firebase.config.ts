@@ -9,10 +9,11 @@
 // NEVER put a Firebase service-account private key or private certificate here.
 
 export const firebaseConfig = {
-  apiKey: "PASTE_FIREBASE_API_KEY_HERE",
-  authDomain: "PASTE_FIREBASE_AUTH_DOMAIN_HERE",
-  projectId: "PASTE_FIREBASE_PROJECT_ID_HERE",
-  storageBucket: "PASTE_FIREBASE_STORAGE_BUCKET_HERE",
-  messagingSenderId: "PASTE_FIREBASE_MESSAGING_SENDER_ID_HERE",
-  appId: "PASTE_FIREBASE_APP_ID_HERE",
+  apiKey: "AIzaSyDo1usQaOXYQvdOx-4KIM11yWw9XmUtEFY",
+  authDomain: "gaddamfactory.firebaseapp.com",
+  projectId: "gaddamfactory",
+  storageBucket: "gaddamfactory.firebasestorage.app",
+  messagingSenderId: "295999645875",
+  appId: "1:295999645875:web:7f06e1b0036a3cb0c468c6",
+  measurementId: "G-P6MTN843P4"
 } as const;
