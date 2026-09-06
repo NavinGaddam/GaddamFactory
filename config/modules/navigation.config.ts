@@ -1,4 +1,6 @@
-export const NAVIGATION = [
+import type { Role } from '../roles.config';
+
+export const NAVIGATION: ReadonlyArray<{ id: string; icon: string; roles: readonly Role[] }> = [
   { id: 'dashboard', icon: 'Activity', roles: ['owner', 'manager', 'employee', 'watchman'] },
   { id: 'stock', icon: 'Warehouse', roles: ['owner', 'manager'] },
   { id: 'inward', icon: 'ArrowDownToLine', roles: ['owner', 'manager'] },
@@ -9,4 +11,4 @@ export const NAVIGATION = [
   { id: 'reports', icon: 'FileText', roles: ['owner', 'manager'] },
   { id: 'logbook', icon: 'ClipboardList', roles: ['owner'] },
   { id: 'settings', icon: 'Settings', roles: ['owner'] },
-] as const;
+];
