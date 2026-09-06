@@ -12,7 +12,13 @@ service cloud.firestore {
 
     match /access_emails/{id} {
       allow read: if owner() || (signedIn() && id == email());
-      allow create, update, delete: if owner();
+      allow create: if owner() || (role('manager') && request.resource.data.role in ['employee', 'watchman']);
+      allow update: if owner() || (
+        role('manager') &&
+        resource.data.role in ['employee', 'watchman'] &&
+        request.resource.data.role in ['employee', 'watchman']
+      );
+      allow delete: if owner();
     }
 
     match /workers/{id} {
