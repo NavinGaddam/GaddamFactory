@@ -23,7 +23,11 @@ service cloud.firestore {
 
     match /workers/{id} {
       allow read: if staff() || owner();
-      allow create, update: if manager();
+      // The access_emails document is the unique login/email registry.
+      // A new worker may only be created when that email is not already registered.
+      allow create: if manager() && request.resource.data.email is string
+        && !exists(/databases/$(database)/documents/access_emails/$(request.resource.data.email));
+      allow update: if manager();
       allow delete: if owner();
     }
 
