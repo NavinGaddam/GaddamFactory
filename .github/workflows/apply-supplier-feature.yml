@@ -9,21 +9,19 @@ permissions:
 
 jobs:
   apply:
-    if: github.event.head_commit.message == 'Apply supplier master and supplier inward tracking'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Update app and rules
-        shell: python
         run: |
+          python3 - <<'PY'
           from pathlib import Path
           import re
 
           page = Path('app/page.tsx')
           text = page.read_text()
-
           marker = "type Master = { id:string; name:string; active?:boolean; weightKg?:number; category?:string };"
           supplier_type = "type Supplier = { id:string; name:string; contactPerson?:string; phone?:string; address?:string; gstNumber?:string; notes?:string; active?:boolean };"
           if supplier_type not in text:
@@ -101,7 +99,6 @@ jobs:
   {supplierOpen&&<Modal title="Add supplier" onClose={()=>setSupplierOpen(false)}><div className="form tw"><label>Supplier name<input value={supplierForm.name} onChange={e=>setSupplierForm({...supplierForm,name:e.target.value})}/></label><label>Contact person<input value={supplierForm.contactPerson} onChange={e=>setSupplierForm({...supplierForm,contactPerson:e.target.value})}/></label><label>Mobile<input value={supplierForm.phone} onChange={e=>setSupplierForm({...supplierForm,phone:e.target.value})}/></label><label>GST number <span className="muted">(optional)</span><input value={supplierForm.gstNumber} onChange={e=>setSupplierForm({...supplierForm,gstNumber:e.target.value})}/></label><label>Address<input value={supplierForm.address} onChange={e=>setSupplierForm({...supplierForm,address:e.target.value})}/></label><label>Notes<input value={supplierForm.notes} onChange={e=>setSupplierForm({...supplierForm,notes:e.target.value})}/></label></div><ModalActions onSave={saveSupplier}/></Modal>}
  </div>
 }'''
-
           text, count = re.subn(r"function Inward\(\{lang,appUser\}:\{lang:Lang;appUser:AppUser\}\)\{.*?\nfunction Stock", new_inward + "\nfunction Stock", text, count=1, flags=re.S)
           if count != 1:
               raise SystemExit('Could not locate Inward component for replacement')
@@ -113,9 +110,8 @@ jobs:
           if line not in r:
               r = r.replace("    match /goods_receipts/{id} { allow read, create, update: if manager(); allow delete: if owner(); }", "    match /goods_receipts/{id} { allow read, create, update: if manager(); allow delete: if owner(); }\n" + line)
           rules.write_text(r)
-
-          # Remove this one-time patch workflow after applying the change.
           Path('.github/workflows/apply-supplier-feature.yml').unlink()
+          PY
 
       - name: Commit changes
         run: |
