@@ -13,70 +13,24 @@ service cloud.firestore {
     match /access_emails/{id} {
       allow read: if owner() || (signedIn() && id == email());
       allow create: if owner() || (role('manager') && request.resource.data.role in ['employee', 'watchman']);
-      allow update: if owner() || (
-        role('manager') &&
-        resource.data.role in ['employee', 'watchman'] &&
-        request.resource.data.role in ['employee', 'watchman']
-      );
+      allow update: if owner() || (role('manager') && resource.data.role in ['employee', 'watchman'] && request.resource.data.role in ['employee', 'watchman']);
       allow delete: if owner();
     }
-
     match /workers/{id} {
       allow read: if staff() || owner();
-      // The access_emails document is the unique login/email registry.
-      // A new worker may only be created when that email is not already registered.
-      allow create: if manager() && request.resource.data.email is string
-        && !exists(/databases/$(database)/documents/access_emails/$(request.resource.data.email));
+      allow create: if manager() && request.resource.data.email is string && !exists(/databases/$(database)/documents/access_emails/$(request.resource.data.email));
       allow update: if manager();
       allow delete: if owner();
     }
-
-    match /goods_receipts/{id} {
-      allow read, create, update: if manager();
-      allow delete: if owner();
-    }
-
-    match /stock_items/{id} {
-      allow read: if manager();
-      allow create, update: if manager();
-      allow delete: if owner();
-    }
-
-    match /stock_transactions/{id} {
-      allow read: if manager();
-      allow create: if manager();
-      allow update, delete: if false;
-    }
-
-    match /batches/{id} {
-      allow read: if staff() || owner();
-      allow create, update: if manager();
-      allow delete: if owner();
-    }
-
-    match /attendance/{id} {
-      allow read, create, update: if attendanceUser();
-      allow delete: if owner();
-    }
-
-    match /audit_logs/{id} {
-      allow read: if owner();
-      allow create: if staff() || owner();
-      allow update, delete: if false;
-    }
-
-    match /master_yarns/{id} {
-      allow read: if staff() || owner();
-      allow create, update, delete: if owner();
-    }
-
-    match /master_package_weights/{id} {
-      allow read: if staff() || owner();
-      allow create, update, delete: if owner();
-    }
-
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /goods_receipts/{id} { allow read, create, update: if manager(); allow delete: if owner(); }
+    match /stock_items/{id} { allow read: if manager(); allow create, update: if manager(); allow delete: if owner(); }
+    match /stock_transactions/{id} { allow read: if manager(); allow create: if manager(); allow update, delete: if false; }
+    match /batches/{id} { allow read: if staff() || owner(); allow create, update: if manager(); allow delete: if owner(); }
+    match /attendance/{id} { allow read, create, update: if attendanceUser(); allow delete: if owner(); }
+    match /audit_logs/{id} { allow read: if owner(); allow create: if staff() || owner(); allow update, delete: if false; }
+    match /master_yarns/{id} { allow read: if staff() || owner(); allow create, update, delete: if owner(); }
+    match /master_package_weights/{id} { allow read: if staff() || owner(); allow create, update, delete: if owner(); }
+    match /master_worker_roles/{id} { allow read: if staff() || owner(); allow create, update, delete: if owner(); }
+    match /{document=**} { allow read, write: if false; }
   }
 }
