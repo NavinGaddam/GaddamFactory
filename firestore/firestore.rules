@@ -1,16 +1,72 @@
 rules_version = '2';
 service cloud.firestore {
- match /databases/{database}/documents {
-  function signedIn(){return request.auth!=null;}
-  function email(){return request.auth.token.email;}
-  function owner(){return signedIn() && (email()=='vsshegur@gmail.com' || (exists(/databases/$(database)/documents/access_emails/$(email())) && get(/databases/$(database)/documents/access_emails/$(email())).data.role=='owner' && get(/databases/$(database)/documents/access_emails/$(email())).data.active==true));}
-  function staff(){return signedIn() && exists(/databases/$(database)/documents/access_emails/$(email())) && get(/databases/$(database)/documents/access_emails/$(email())).data.active==true;}
-  match /access_emails/{id}{allow read:if owner()|| (signedIn()&&id==email());allow write:if owner();}
-  match /workers/{id}{allow read:if staff()||owner();allow create,update:if owner()||staff();allow delete:if owner();}
-  match /goods_receipts/{id}{allow read,create:if owner()||staff();allow update:if owner()||staff();allow delete:if owner();}
-  match /batches/{id}{allow read,create,update:if owner()||staff();allow delete:if owner();}
-  match /attendance/{id}{allow read,create,update:if owner()||staff();allow delete:if owner();}
-  match /audit_logs/{id}{allow read:if owner();allow create:if staff()||owner();allow update,delete:if false;}
-  match /{document=**}{allow read,write:if false;}
- }
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.email; }
+    function access() { return signedIn() && exists(/databases/$(database)/documents/access_emails/$(email())); }
+    function staff() { return access() && get(/databases/$(database)/documents/access_emails/$(email())).data.active == true; }
+    function role(r) { return staff() && get(/databases/$(database)/documents/access_emails/$(email())).data.role == r; }
+    function owner() { return signedIn() && (email() == 'vsshegur@gmail.com' || role('owner')); }
+    function manager() { return owner() || role('manager'); }
+    function attendanceUser() { return owner() || role('manager') || role('watchman') || role('employee'); }
+
+    match /access_emails/{id} {
+      allow read: if owner() || (signedIn() && id == email());
+      allow create, update, delete: if owner();
+    }
+
+    match /workers/{id} {
+      allow read: if staff() || owner();
+      allow create, update: if manager();
+      allow delete: if owner();
+    }
+
+    match /goods_receipts/{id} {
+      allow read, create, update: if manager();
+      allow delete: if owner();
+    }
+
+    match /stock_items/{id} {
+      allow read: if manager();
+      allow create, update: if manager();
+      allow delete: if owner();
+    }
+
+    match /stock_transactions/{id} {
+      allow read: if manager();
+      allow create: if manager();
+      allow update, delete: if false;
+    }
+
+    match /batches/{id} {
+      allow read: if staff() || owner();
+      allow create, update: if manager();
+      allow delete: if owner();
+    }
+
+    match /attendance/{id} {
+      allow read, create, update: if attendanceUser();
+      allow delete: if owner();
+    }
+
+    match /audit_logs/{id} {
+      allow read: if owner();
+      allow create: if staff() || owner();
+      allow update, delete: if false;
+    }
+
+    match /master_yarns/{id} {
+      allow read: if staff() || owner();
+      allow create, update, delete: if owner();
+    }
+
+    match /master_package_weights/{id} {
+      allow read: if staff() || owner();
+      allow create, update, delete: if owner();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
 }
