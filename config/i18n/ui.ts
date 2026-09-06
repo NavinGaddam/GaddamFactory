@@ -10,7 +10,7 @@ export const UI = {
     owner: 'Owner', manager: 'Manager', employee: 'Worker', watchman: 'Watchman', loginTitle: 'Gaddam Factory',
     loginText: 'Use your Google account to enter the factory system', continueGoogle: 'Continue with Google',
     restricted: 'This Google account has not been assigned access yet.', english: 'English', marathi: 'मराठी',
-    light: 'Light', dark: 'Dark', add: 'Add', online: 'Connected', loading: 'Loading…', today: 'Today', kg: 'kg'
+    light: 'Light', dark: 'Dark', add: 'Add', online: 'Connected', loading: 'Loading…', today: 'Today', kg: 'kg', search: 'Search'
   },
   mr: {
     dashboard: 'डॅशबोर्ड', stock: 'साठा', inward: 'माल आवक', batches: 'बॅच', workers: 'कामगार', attendance: 'हजेरी',
@@ -20,6 +20,6 @@ export const UI = {
     save: 'जतन करा', cancel: 'रद्द', owner: 'मालक', manager: 'मॅनेजर', employee: 'कामगार', watchman: 'वॉचमन',
     loginTitle: 'गड्डाम फॅक्टरी', loginText: 'फॅक्टरीमध्ये प्रवेशासाठी Google खाते वापरा', continueGoogle: 'Google ने सुरू करा',
     restricted: 'या Google खात्याला अजून प्रवेश दिलेला नाही.', english: 'English', marathi: 'मराठी', light: 'लाइट', dark: 'डार्क',
-    add: 'जोडा', online: 'कनेक्टेड', loading: 'लोड होत आहे…', today: 'आज', kg: 'किलो'
+    add: 'जोडा', online: 'कनेक्टेड', loading: 'लोड होत आहे…', today: 'आज', kg: 'किलो', search: 'शोधा'
   }
 } as const;
