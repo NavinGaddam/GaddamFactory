@@ -1,7 +1,8 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export type AuditActor = { email: string; displayName: string; uid?: string };
+type AuditRole = 'owner' | 'manager' | 'employee' | 'watchman';
+export type AuditActor = { email: string; displayName: string; uid?: string; role?: AuditRole; active?: boolean };
 
 export async function writeAudit(
   actor: AuditActor,
@@ -15,6 +16,7 @@ export async function writeAudit(
     actorUid: actor.uid || '',
     actorEmail: actor.email,
     actorName: actor.displayName,
+    actorRole: actor.role || '',
     action,
     entity,
     summary,
