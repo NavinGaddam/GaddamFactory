@@ -23,6 +23,7 @@ service cloud.firestore {
       allow delete: if owner();
     }
     match /goods_receipts/{id} { allow read, create, update: if manager(); allow delete: if owner(); }
+    match /suppliers/{id} { allow read, create, update: if manager(); allow delete: if owner(); }
     match /stock_items/{id} { allow read: if manager(); allow create, update: if manager(); allow delete: if owner(); }
     match /stock_transactions/{id} { allow read: if manager(); allow create: if manager(); allow update, delete: if false; }
     match /batches/{id} { allow read: if staff() || owner(); allow create, update: if manager(); allow delete: if owner(); }
@@ -30,7 +31,7 @@ service cloud.firestore {
     match /audit_logs/{id} { allow read: if owner(); allow create: if staff() || owner(); allow update, delete: if false; }
     match /master_yarns/{id} { allow read: if staff() || owner(); allow create, update, delete: if owner(); }
     match /master_package_weights/{id} { allow read: if staff() || owner(); allow create, update, delete: if owner(); }
-    match /master_worker_roles/{id} { allow read: if staff() || owner(); allow create, update, delete: if owner(); }
+    match /master_worker_roles/{id} { allow read, create, update, delete: if owner(); }
     match /{document=**} { allow read, write: if false; }
   }
 }
