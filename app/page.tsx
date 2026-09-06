@@ -222,11 +222,47 @@ function Reports({ lang }: { lang: Lang }) { const cards = [lang === 'mr' ? 'स
 
 function Logbook({ lang }: { lang: Lang }) { const logs = useCollection<any>('audit_logs'); return <div className="page"><section className="card"><CardHeader title={lang === 'mr' ? 'ऑडिट लॉग' : 'Audit log'} />{logs.length === 0 ? <Empty text={lang === 'mr' ? 'अजून ऑडिट नोंदी नाहीत.' : 'No audit entries yet.'} /> : logs.map(l => <div className="row" key={l.id}><div><strong>{l.summary}</strong><small>{l.actorName || l.actorEmail} · {l.entity} · {l.action}</small></div><span className="muted">{l.createdAt?.toDate ? l.createdAt.toDate().toLocaleString('en-IN') : ''}</span></div>)}</section></div>; }
 
-function SettingsView({ lang, appUser }: { lang: Lang; appUser: AppUser }) { const yarns = useCollection<Master>('master_yarns'); const weights = useCollection<Master>('master_package_weights'); const access = useCollection<any>('access_emails'); const [yarnName, setYarnName] = useState(''); const [weight, setWeight] = useState(''); const [email, setEmail] = useState(''); const [role, setRole] = useState<Role>('manager');
-  async function addYarn() { if (!db || !yarnName.trim()) return; await addDoc(collection(db!, 'master_yarns'), { name: yarnName.trim(), active: true, createdAt: serverTimestamp() }); setYarnName(''); }
-  async function addWeight() { if (!db || Number(weight) <= 0) return; await addDoc(collection(db!, 'master_package_weights'), { name: `${Number(weight)} kg`, weightKg: Number(weight), active: true, createdAt: serverTimestamp() }); setWeight(''); }
-  async function addAccess() { if (!db || !email.trim()) return; const e = email.trim().toLowerCase(); await setDoc(doc(db!, 'access_emails', e), { email: e, role, active: true, createdAt: serverTimestamp(), createdBy: appUser.uid }, { merge: true }); setEmail(''); }
-  return <div className="page"><div className="content-grid"><section className="card"><CardHeader title={lang === 'mr' ? 'यार्न मास्टर' : 'Yarn master'} /><div className="form"><label>Add yarn<input value={yarnName} onChange={e => setYarnName(e.target.value)} placeholder="Cotton · 10 Single" /></label><button className="secondary" onClick={addYarn}><Plus size={17} />Add yarn</button></div>{yarns.map(y => <div className="row" key={y.id}><strong>{y.name}</strong><span className="pill green">Active</span></div>)}</section><section className="card"><CardHeader title={lang === 'mr' ? 'पोटे / बॉक्स वजन' : 'Package weights'} /><div className="form"><label>Add weight (kg)<input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="50" /></label><button className="secondary" onClick={addWeight}><Plus size={17} />Add weight</button></div>{weights.length === 0 && <p className="muted">Defaults: 50 kg, 60 kg</p>}{weights.map(w => <div className="row" key={w.id}><strong>{w.weightKg} kg</strong><span className="pill green">Active</span></div>)}</section></div><section className="card"><CardHeader title={lang === 'mr' ? 'वापरकर्ता प्रवेश' : 'User access'} /><div className="form tw"><label>Email<input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="manager@example.com" /></label><label>Role<select value={role} onChange={e => setRole(e.target.value as Role)}><option value="owner">Owner</option><option value="manager">Manager</option><option value="employee">Employee</option><option value="watchman">Watchman</option></select></label></div><button className="primary narrow-btn" onClick={addAccess}><Plus size={17} />Add access</button>{access.map(a => <div className="row" key={a.id}><div><strong>{a.email}</strong><small>{a.role}</small></div><span className={a.active !== false ? 'pill green' : 'pill red'}>{a.active !== false ? 'Active' : 'Inactive'}</span></div>)}</section></div>; }
+function SettingsView({ lang, appUser }: { lang: Lang; appUser: AppUser }) {
+  const yarns = useCollection<Master>('master_yarns');
+  const weights = useCollection<Master>('master_package_weights');
+  const access = useCollection<any>('access_emails');
+  const [yarnName, setYarnName] = useState('');
+  const [weight, setWeight] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<Role>('manager');
+  const [savingAccess, setSavingAccess] = useState(false);
+  const [accessMessage, setAccessMessage] = useState('');
+
+  async function addYarn() {
+    if (!db || !yarnName.trim()) return;
+    try { await addDoc(collection(db!, 'master_yarns'), { name: yarnName.trim(), active: true, createdAt: serverTimestamp() }); setYarnName(''); }
+    catch { alert('Unable to add yarn. Check Firestore permissions.'); }
+  }
+  async function addWeight() {
+    if (!db || Number(weight) <= 0) return;
+    try { await addDoc(collection(db!, 'master_package_weights'), { name: `${Number(weight)} kg`, weightKg: Number(weight), active: true, createdAt: serverTimestamp() }); setWeight(''); }
+    catch { alert('Unable to add package weight. Check Firestore permissions.'); }
+  }
+  async function addAccess() {
+    const e = email.trim().toLowerCase();
+    if (!db) { setAccessMessage('Firebase is not configured.'); return; }
+    if (!e) { setAccessMessage(lang === 'mr' ? 'ईमेल टाका.' : 'Enter an email address.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { setAccessMessage(lang === 'mr' ? 'योग्य ईमेल टाका.' : 'Enter a valid email address.'); return; }
+    if (e === BOOTSTRAP_OWNER.toLowerCase()) { setAccessMessage(lang === 'mr' ? 'हा ईमेल आधीच Owner आहे.' : 'This email is already the bootstrap Owner.'); return; }
+    setSavingAccess(true); setAccessMessage('');
+    try {
+      await setDoc(doc(db!, 'access_emails', e), { email: e, role, active: true, createdAt: serverTimestamp(), createdBy: appUser.uid }, { merge: true });
+      await writeAudit(appUser, 'access', `Granted ${role} access to ${e}`);
+      setEmail('');
+      setAccessMessage(lang === 'mr' ? 'प्रवेश यशस्वीरीत्या जोडला.' : 'Access added successfully.');
+    } catch (err: any) {
+      const code = String(err?.code || '');
+      setAccessMessage(code.includes('permission-denied') ? (lang === 'mr' ? 'Firestore परवानगी नाकारली. Firestore Rules deploy करा.' : 'Firestore permission denied. Deploy the Firestore rules.') : (err?.message || 'Unable to add access.'));
+    } finally { setSavingAccess(false); }
+  }
+
+  return <div className="page"><div className="content-grid"><section className="card"><CardHeader title={lang === 'mr' ? 'यार्न मास्टर' : 'Yarn master'} /><div className="form"><label>Add yarn<input value={yarnName} onChange={e => setYarnName(e.target.value)} placeholder="Cotton · 10 Single" /></label><button className="secondary" onClick={addYarn}><Plus size={17} />Add yarn</button></div>{yarns.map(y => <div className="row" key={y.id}><strong>{y.name}</strong><span className="pill green">Active</span></div>)}</section><section className="card"><CardHeader title={lang === 'mr' ? 'पोटे / बॉक्स वजन' : 'Package weights'} /><div className="form"><label>Add weight (kg)<input type="number" value={weight} onChange={e => setWeight(e.target.value)} placeholder="50" /></label><button className="secondary" onClick={addWeight}><Plus size={17} />Add weight</button></div>{weights.length === 0 && <p className="muted">Defaults: 50 kg, 60 kg</p>}{weights.map(w => <div className="row" key={w.id}><strong>{w.weightKg} kg</strong><span className="pill green">Active</span></div>)}</section></div><section className="card"><CardHeader title={lang === 'mr' ? 'वापरकर्ता प्रवेश' : 'User access'} /><div className="form tw"><label>Email<input type="email" value={email} onChange={e => { setEmail(e.target.value); if (accessMessage) setAccessMessage(''); }} placeholder="manager@example.com" /></label><label>Role<select value={role} onChange={e => setRole(e.target.value as Role)}><option value="owner">Owner</option><option value="manager">Manager</option><option value="employee">Employee</option><option value="watchman">Watchman</option></select></label></div><button className="primary narrow-btn" disabled={savingAccess} onClick={addAccess}>{savingAccess ? 'Adding…' : <><Plus size={17} />Add access</>}</button>{accessMessage && <div className="access-feedback"><AlertTriangle size={16} />{accessMessage}</div>}{access.map(a => <div className="row" key={a.id}><div><strong>{a.email}</strong><small>{safeRole(a.role)}</small></div><span className={a.active !== false ? 'pill green' : 'pill red'}>{a.active !== false ? 'Active' : 'Inactive'}</span></div>)}</section></div>;
+}
 
 function paymentLabel(w: Worker, lang: Lang) { const map: Record<PaymentType, string> = { hour: lang === 'mr' ? 'तासाप्रमाणे' : 'Per Hour', kg: lang === 'mr' ? 'किलोप्रमाणे' : 'Per KG', task: lang === 'mr' ? 'कामाप्रमाणे' : 'Per Task' }; return `${map[w.paymentType]} · ₹${w.rate}`; }
 function Metric({ icon, title, value, suffix }: { icon: React.ReactNode; title: string; value: string; suffix?: string }) { return <div className="metric card"><div className="metric-icon">{icon}</div><div><span>{title}</span><strong>{value} <small>{suffix}</small></strong></div></div>; }
